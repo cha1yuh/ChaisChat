@@ -2,17 +2,19 @@
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Text Chat</title>
+  <title>ChaisChat</title>
   <style>
     body { font-family: Arial; padding: 20px; }
     #chat { border: 1px solid #ccc; height: 300px; overflow-y: scroll; padding: 10px; margin-top: 20px; }
     input, button { font-size: 16px; padding: 10px; margin-top: 8px; width: 100%; }
   </style>
+
+  <!-- Firebase libraries -->
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js"></script>
 </head>
 <body>
-<h2>Text Chat</h2>
+<h2>ChaisChat</h2>
 
 <div id="auth">
   <input id="username" placeholder="Username">
@@ -29,58 +31,91 @@
 </div>
 
 <script>
+  // 🔹 Firebase config for ChaisChat 🔹
   const firebaseConfig = {
-    apiKey: "YOUR_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT_ID.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyB73SooVclbT8DmLKxQ-YkLO1EWv1XpljE",
+    authDomain: "chaischat.firebaseapp.com",
+    projectId: "chaischat",
+    storageBucket: "chaischat.firebasestorage.app",
+    messagingSenderId: "1093836818502",
+    appId: "1:1093836818502:web:344abe96554b9e3dd3a247",
+    measurementId: "G-SNRCQY0ZY0"
   };
 
+  // Initialize Firebase
   const app = firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
+
   let currentUser = null;
 
+  // REGISTER NEW USER
   async function register() {
     const user = username.value.trim();
     const pass = password.value.trim();
     if(!user || !pass){ alert("Enter username and password"); return; }
+
     const userRef = db.collection("users").doc(user);
     const doc = await userRef.get();
-    if(doc.exists){ alert("Username already taken!"); } 
-    else { await userRef.set({ password: pass }); alert("Account created!"); }
+
+    if(doc.exists){
+      alert("Username already taken!");
+    } else {
+      await userRef.set({ password: pass });
+      alert("Account created! You can now log in.");
+    }
   }
 
+  // LOGIN EXISTING USER
   async function login() {
     const user = username.value.trim();
     const pass = password.value.trim();
     if(!user || !pass){ alert("Enter username and password"); return; }
+
     const doc = await db.collection("users").doc(user).get();
-    if(!doc.exists){ alert("Username not found!"); } 
-    else if(doc.data().password !== pass){ alert("Wrong password!"); } 
-    else { currentUser = user; auth.style.display="none"; chatUI.style.display="block"; loadMessages(); }
+    if(!doc.exists){
+      alert("Username not found!");
+    } else if(doc.data().password !== pass){
+      alert("Wrong password!");
+    } else {
+      currentUser = user;
+      auth.style.display = "none";
+      chatUI.style.display = "block";
+      loadMessages();
+    }
   }
 
-  function logout(){ currentUser=null; chatUI.style.display="none"; auth.style.display="block"; }
+  // LOGOUT
+  function logout(){
+    currentUser = null;
+    chatUI.style.display = "none";
+    auth.style.display = "block";
+  }
 
+  // SEND MESSAGE
   async function sendMessage(){
     const text = message.value.trim();
     if(!text) return;
-    await db.collection("messages").add({ user: currentUser, text, time: Date.now() });
-    message.value="";
+    await db.collection("messages").add({
+      user: currentUser,
+      text,
+      time: Date.now()
+    });
+    message.value = "";
   }
 
+  // LOAD MESSAGES REAL-TIME
   function loadMessages(){
-    db.collection("messages").orderBy("time").onSnapshot(snapshot=>{
-      chat.innerHTML="";
-      snapshot.forEach(msg=>{
-        const m = msg.data();
-        chat.innerHTML += `<p><b>${m.user}:</b> ${m.text}</p>`;
+    db.collection("messages").orderBy("time")
+      .onSnapshot(snapshot => {
+        chat.innerHTML = "";
+        snapshot.forEach(msg => {
+          const m = msg.data();
+          chat.innerHTML += `<p><b>${m.user}:</b> ${m.text}</p>`;
+        });
+        chat.scrollTop = chat.scrollHeight;
       });
-      chat.scrollTop = chat.scrollHeight;
-    });
   }
 </script>
+
 </body>
 </html>
